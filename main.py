@@ -1,3 +1,5 @@
+from ast import If
+from tkinter.messagebox import NO
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -8,10 +10,9 @@ from bs4 import BeautifulSoup
 import csv
 import unicodedata
 import re
+import sys
+import argparse
 
-driver = webdriver.Chrome('chromedriver.exe')
-base_url = 'http://info.halal.go.id/cari/'
-driver.get(base_url)
 # select_jenis = driver.find_element(by=By.NAME, value='ctl00$MainContent$ddlJenisProduk')
 # options = [x for x in select_jenis.find_elements(by=By.TAG_NAME, value='option')]
 
@@ -36,10 +37,27 @@ def slugify(value, allow_unicode=False):
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
-def crawl(jenis=None):
+def crawl(jenis=None, bisnis=None, provinsi=None, produk=None):
+  driver = webdriver.Chrome('chromedriver.exe')
+  base_url = 'http://info.halal.go.id/cari/'
+  driver.get(base_url)
+
+  if bisnis is not None:
+    business_select = driver.find_element(by=By.NAME, value='ctl00$MainContent$tbPU')
+    business_select.send_keys(bisnis)
+
+  if produk is not None:
+    product_select = driver.find_element(by=By.NAME, value='ctl00$MainContent$tbNamaProduk')
+    product_select.send_keys(produk)
+
   page = 1
   while True:
     if page == 1:
+      element_provinsi = WebDriverWait(driver, 10).until(
+          EC.element_to_be_clickable((By.NAME, 'ctl00$MainContent$ddlProv'))
+      )
+      select_provinsi = Select(element_provinsi)
+      select_provinsi.select_by_visible_text(provinsi)
       if jenis is not None:
         element = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.NAME, 'ctl00$MainContent$ddlJenisProduk'))
@@ -99,4 +117,35 @@ def crawl(jenis=None):
 #   except (TimeoutException, AttributeError) as e:
 #     continue
 
-crawl(jenis='Restoran')
+def main():
+  parser = argparse.ArgumentParser(description='Menarik data produk/produsen halal dari web Sihalal')
+  parser.add_argument('--jenis', help='jenis produk yang tersedia di pilihan di web Sihalal')
+  parser.add_argument('--bisnis', help='pencarian berdasarkan nama pelaku usaha')
+  parser.add_argument('--provinsi', help='provinsi yang tersedia di pilihan di web Sihalal')
+  parser.add_argument('--produk', help='pencarian berdasarkan nama produk')
+  args = parser.parse_args()
+
+  if args.jenis:
+    jenis = args.jenis
+  else:
+    jenis = None
+
+  if args.bisnis:
+    bisnis = args.bisnis
+  else:
+    bisnis = None
+  
+  if args.provinsi:
+    provinsi = args.provinsi
+  else:
+    provinsi = 'Jawa Timur'
+
+  if args.produk:
+    produk = args.produk
+  else:
+    produk = None
+  
+  crawl(jenis=jenis, bisnis=bisnis, provinsi=provinsi, produk=produk)
+
+if __name__ == '__main__':
+  main()
