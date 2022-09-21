@@ -108,15 +108,6 @@ def crawl(jenis=None, bisnis=None, provinsi=None, produk=None):
         write.writerow(data)
       print(data)
 
-
-# f = open('options.txt', 'r')
-# for o in f:
-#   jenis_produk = o.strip()
-#   try:
-#     crawl(jenis=jenis_produk)
-#   except (TimeoutException, AttributeError) as e:
-#     continue
-
 def main():
   parser = argparse.ArgumentParser(description='Menarik data produk/produsen halal dari web Sihalal')
   parser.add_argument('--jenis', help='jenis produk yang tersedia di pilihan di web Sihalal')
